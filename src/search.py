@@ -1,3 +1,15 @@
+import os
+from dotenv import load_dotenv
+from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI
+from langchain_postgres import PGVector
+
+load_dotenv()
+
+DATABASE_URL = os.getenv("DATABASE_URL")
+COLLECTION_NAME = os.getenv("PG_VECTOR_COLLECTION_NAME", "documents")
+EMBEDDING_MODEL = os.getenv("GOOGLE_EMBEDDING_MODEL", "models/embedding-001")
+LLM_MODEL = os.getenv("GOOGLE_LLM_MODEL", "gemini-2.5-flash-lite")
+
 PROMPT_TEMPLATE = """
 CONTEXTO:
 {contexto}
@@ -25,5 +37,25 @@ PERGUNTA DO USUÁRIO:
 RESPONDA A "PERGUNTA DO USUÁRIO"
 """
 
-def search_prompt(question=None):
-    pass
+
+def search_prompt():
+    try:
+        embeddings = GoogleGenerativeAIEmbeddings(model=EMBEDDING_MODEL)
+        store = PGVector(
+            embeddings=embeddings,
+            collection_name=COLLECTION_NAME,
+            connection=DATABASE_URL,
+        )
+        llm = ChatGoogleGenerativeAI(model=LLM_MODEL)
+    except Exception as e:
+        print(f"Erro ao inicializar: {e}")
+        return None
+
+    def chain(question: str) -> str:
+        results = store.similarity_search_with_score(question, k=10)
+        context = "\n\n".join(doc.page_content for doc, _ in results)
+        prompt = PROMPT_TEMPLATE.format(contexto=context, pergunta=question)
+        response = llm.invoke(prompt)
+        return response.content
+
+    return chain
