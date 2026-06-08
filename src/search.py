@@ -1,14 +1,6 @@
-import os
-from dotenv import load_dotenv
 from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI
 from langchain_postgres import PGVector
-
-load_dotenv()
-
-DATABASE_URL = os.getenv("DATABASE_URL")
-COLLECTION_NAME = os.getenv("PG_VECTOR_COLLECTION_NAME", "documents")
-EMBEDDING_MODEL = os.getenv("GOOGLE_EMBEDDING_MODEL", "models/embedding-001")
-LLM_MODEL = os.getenv("GOOGLE_LLM_MODEL", "gemini-2.5-flash-lite")
+from config import DATABASE_URL, COLLECTION_NAME, EMBEDDING_MODEL, LLM_MODEL
 
 PROMPT_TEMPLATE = """
 CONTEXTO:

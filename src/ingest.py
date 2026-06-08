@@ -1,18 +1,11 @@
-import os
 import time
 import random
-from dotenv import load_dotenv
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_postgres import PGVector
+from config import DATABASE_URL, COLLECTION_NAME, EMBEDDING_MODEL, PDF_PATH
 
-load_dotenv()
-
-PDF_PATH = os.getenv("PDF_PATH", "document.pdf")
-DATABASE_URL = os.getenv("DATABASE_URL")
-COLLECTION_NAME = os.getenv("PG_VECTOR_COLLECTION_NAME", "documents")
-EMBEDDING_MODEL = os.getenv("GOOGLE_EMBEDDING_MODEL", "models/gemini-embedding-001")
 BATCH_SIZE = 5
 BATCH_DELAY = 2  # segundos entre lotes (respeita rate limit do tier gratuito)
 
@@ -46,6 +39,8 @@ def ingest_pdf():
         if i + BATCH_SIZE < total:
             time.sleep(BATCH_DELAY)
 
+    print("Ingestão concluída.")
+
 
 def _add_with_retry(store, batch, max_retries=5):
     for attempt in range(max_retries):
@@ -59,8 +54,6 @@ def _add_with_retry(store, batch, max_retries=5):
                 time.sleep(wait)
             else:
                 raise
-
-    print("Ingestão concluída.")
 
 
 if __name__ == "__main__":
